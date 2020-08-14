@@ -7,7 +7,6 @@ import requests
 import yyetsBot
 
 import telebot
-from apscheduler.schedulers.background import BackgroundScheduler
 from telebot import types
 from telebot import apihelper
 
@@ -24,7 +23,7 @@ def talk_with_user(message):
     :param message:
     :return:
     """
-    config.logger1.info("echo_all 获取到用户:{}，输入数据:{}".format(message.chat.id, message.text))
+    config.logger1.info("talk_with_user 获取到用户:{}，输入数据:{}".format(message.chat.id, message.text))
 
     img_data = yyetsBot.download_poster(message.text)
     if img_data is None:
@@ -34,25 +33,86 @@ def talk_with_user(message):
         bot.send_chat_action(message.chat.id, 'typing')
         bot.send_message(message.chat.id, "你想看哪个呢？请点击选择")
         for i in img_data:
-            channel_cn = i[0]
-            cnname = i[1]
-            img = i[2]
+            id = i[0]
+            channel_cn = i[1]
+            cnname = i[2]
+            img = i[3]
             bot.send_chat_action(message.chat.id, 'typing')
             markup = types.InlineKeyboardMarkup()
-            markup.add(types.InlineKeyboardButton("{}:{}".format(channel_cn, cnname), callback_data="{}:{}".format(channel_cn, cnname)))
+            markup.add(types.InlineKeyboardButton("{}:{}".format(channel_cn, cnname), callback_data="{}:{}:{}".format(channel_cn, cnname, id)))
             bot.send_photo(message.chat.id, img, reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: call.data != 'fix')
 def send_video_link(call):
-    bot.send_chat_action(call.message.chat.id, 'typing')
-    dict_r = get(call.data)
-    if not dict_r:
-        bot.send_message(call.message.chat.id, '我失忆惹，请在聊天框内重新发送你想要的影视名称')
-    bot.answer_callback_query(call.id, '文件大小为%s' % dict_r['size'])
-    bot.send_message(call.message.chat.id, dict_r['ed2k'] if dict_r['ed2k'] else '哎呀，没有ed2k链接')
-    bot.send_message(call.message.chat.id, dict_r['magnet'] if dict_r['magnet'] else '哎呀，没有magnet链接')
+    config.logger1.info('send_video_link 接收到用户选择查看下载链接信息:{}'.format(call.data))
+    data = call.data.split(':')
+    if len(data) == 2:
+        # if "season" in data:
+        videoID = data[0]
+        season = data[1]
+        episodeCount = yyetsBot.get_episode_count(season, videoID)
+        if episodeCount is None:
+            bot.send_message(call.message.chat.id, 'Ops，无下载资源提供...')
+        else:
+            btn_list = []
+            size = 3
+            markup = types.InlineKeyboardMarkup(size)
+            for episode in range(1, int(episodeCount) + 1):
+                btn_list.append(types.InlineKeyboardButton("第%s集" % episode, callback_data='{}:{}:{}:{}'.format('电视剧', videoID, season, episode)))
+            for i in range(0, len(btn_list), size):
+                part = btn_list[i:i + size]
+                if len(part) == 3:
+                    markup.add(part[0], part[1], part[2])
+                elif len(part) == 2:
+                    markup.add(part[0], part[1])
+                else:
+                    markup.add(part[0])
+            bot.answer_callback_query(call.id, '你要的信息取回来惹')
+            bot.edit_message_text('那么看第几集好呢😘', chat_id=call.message.chat.id, message_id=call.message.message_id)
+            bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markup)
+        # elif "episode" in data:
+        #     pass
+    elif len(data) == 3:
+        if data[0] == "电影":
+            videoID = data[2]
+            name, size, address = yyetsBot.get_movie_link(videoID)
+            if name is None:
+                bot.send_chat_action(call.message.chat.id, 'typing')
+                bot.send_message(call.message.chat.id, 'Ops，无下载资源提供...')
+            else:
+                info = "资源名称: " + name + "\n" + "文件大小: " + size + "\n" + "下载地址: " + address
+                bot.answer_callback_query(call.id, '你要的信息取回来惹')
+                bot.send_message(call.message.chat.id, info)
+        elif data[0] == "电视剧":
+            videoID = data[2]
+            season_count = yyetsBot.get_season_count(videoID)
+            markup = types.InlineKeyboardMarkup()
+            for season in range(1, int(season_count) + 1):
+                markup.add(types.InlineKeyboardButton
+                           ("第%s季" % season,
+                            callback_data='{}:{}'.format(videoID, season)))
+            bot.answer_callback_query(call.id, '你要的信息取回来惹')
+            bot.send_message(call.message.chat.id, "你想看第几季呢？请点击选择", reply_markup=markup)
+    elif len(data) == 4:
+        videoID = data[1]
+        season = data[2]
+        episode = data[3]
+        tv_links = yyetsBot.get_tv_link(videoID, season, episode)
+        for tv_link in tv_links:
+            name = tv_link[0]
+            size = tv_link[1]
+            way_name = tv_link[2]
+            address = tv_link[3]
+            info = "资源名称: " + name + "\n" + "文件大小: " + size + "\n" + "下载类型: " + way_name + "\n" + "下载地址: " + address
+            bot.answer_callback_query(call.id, '你要的信息取回来惹')
+            bot.send_message(call.message.chat.id, info)
+    else:
+        pass
 
 
 if __name__ == '__main__':
-    bot.polling(none_stop=True)
+    try:
+        bot.polling(none_stop=True)
+    except Exception as e:
+        config.logger1.exception("__main__ Telegram Bot运行异常，抛出信息:{}".format(e))

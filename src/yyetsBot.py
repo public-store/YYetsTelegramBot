@@ -29,7 +29,7 @@ def show_resource(name):
     text = json.loads(response.text)
     # 处理返回数据
     if len(text['data']) == 0:
-        config.logger1.warning("search_resource 查询内容:{}，返回结果空，查询无结果")
+        config.logger1.warning("search_resource 查询内容:{}，返回结果空，查询无结果".format(name))
         return None
     else:
         data = []
@@ -43,6 +43,11 @@ def show_resource(name):
 
 
 def search_resource(video_id):
+    """
+    这里根据ID查询资源信息，获取包含了剧集，下载链接信息
+    :param video_id:
+    :return:
+    """
     url = "http://pc.zmzapi.com/index.php"
 
     params = {
@@ -50,7 +55,7 @@ def search_resource(video_id):
         "m": "index",
         "client": "5",
         "accesskey": "519f9cab85c8059d17544947k361a827",
-        "a": "search",
+        "a": "resource",
         "id": "{}".format(video_id)
     }
     headers = {
@@ -58,18 +63,13 @@ def search_resource(video_id):
     }
 
     response = requests.request("GET", url, params=params, headers=headers)
-    config.logger1.info("get_video_links 查询资源ID:{}，返回结果:{}".format(name, response.text))
     text = json.loads(response.text)
     # 处理返回数据
-    if len(text['status']) != 0:
-        config.logger1.warning("get_video_links 查询ID:{}，无下载资源提供")
+    if text['status'] != 1:
+        config.logger1.warning("search_resource 查询ID:{}，无下载资源提供".format(video_id))
         return None
     else:
-        data = []
-        for item in text['data'].get('list'):
-            episodes = item['episodes']
-
-        return data
+        return text['data'].get('list')
 
 
 def download_poster(name):
@@ -82,6 +82,7 @@ def download_poster(name):
     if data is not None:
         img_data = []
         for i in data:
+            id = i[0]
             poster_url = i[1]
             cnname = i[2]
             channel_cn = i[3]
@@ -90,8 +91,8 @@ def download_poster(name):
             }
             response = requests.request("GET", poster_url, headers=headers, verify=False)
             if response.status_code == 200:
-                img_data.append([channel_cn, cnname, response.content])
-                config.logger1.info("download_poster channel_cn:{},cnname:{} 提交下载任务正常".format(channel_cn, cnname))
+                img_data.append([id, channel_cn, cnname, response.content])
+                config.logger1.info("download_poster 资源类型:{},资源名称:{} 提交下载任务正常".format(channel_cn, cnname))
             else:
                 config.logger1.warning("download_poster 提交下载任务异常，返回结果:{}".format(response.text))
         return img_data
@@ -100,6 +101,148 @@ def download_poster(name):
         return None
 
 
+def get_season_count(videoID):
+    """
+    获取季数
+    :param id:
+    :return:
+    """
+    try:
+        data = search_resource(videoID)
+        # 这里做下区分，由于韩剧这里的season固定是101，而美剧日剧则是真实的季数
+        check = data[0].get('season')
+        if check == "101":
+            season_count = 1
+        else:
+            season_count = check
+
+        config.logger1.info("get_season_count 资源ID:{},季数:{}".format(videoID, season_count))
+        return season_count
+    except Exception as e:
+        config.logger1.exception('get_season_count 获取季数失败，抛出异常:{}'.format(e))
+
+
+def get_episode_count(seasonCount, videoID):
+    """
+    获取当季集数
+    :param seasonCount:
+    :param videoID:
+    :return:
+    """
+    try:
+        data = search_resource(videoID)
+        if data is None:
+            config.logger1.warning('get_episode_count 资源ID:{}，无下载资源提供'.format(videoID))
+            return None
+        else:
+            for item in data:
+                if item.get('season') == seasonCount or item.get('season') == "101":
+                    episodeCount = item.get('episodes')[0].get('episode')
+                    config.logger1.info(
+                        'get_episode_count 视频ID:{}，季数:{}，集数:{}'.format(videoID, seasonCount, episodeCount))
+                    return episodeCount
+                else:
+                    return None
+    except Exception as e:
+        config.logger1.exception('get_episode_count 获取集数失败，抛出异常:{}'.format(e))
+
+
+def get_tv_link(videoID, seasonCount, episodeCount):
+    """
+    获取对应剧集的下载链接
+    :param videoID:
+    :param seasonCount:
+    :param episodeCount:
+    :return:
+    """
+    try:
+        data = search_resource(videoID)
+        if data is None:
+            config.logger1.warning('get_movie_link 资源ID:{}，无下载资源提供'.format(videoID))
+            return None
+        else:
+            for item in data:
+                if item.get('season') != seasonCount or item.get('season') == "101":
+                    episodes = item.get('episodes')
+                    for i in episodes:
+                        if i.get('episode') == episodeCount:
+                            return iter_tv_link(i.get('files'))
+                        else:
+                            pass
+                else:
+                    config.logger1.exception('get_tv_link 查无剧集')
+    except Exception as e:
+        config.logger1.exception('get_tv_link 获取电视剧下载链接失败，抛出异常:{}'.format(e))
+
+
+def iter_tv_link(files):
+    """
+    批量获取对应集数电视剧，为了兼容老电视剧，同时也获取了电驴链接
+    :param files:
+    :return:
+    """
+    try:
+        videos = ''
+        if "MP4" in files:
+            videos = files.get('MP4')
+        elif "HR-HDTV" in files:
+            videos = files.get('HR-HDTV')
+
+        videos_info = []
+        for i in videos:
+            if i.get('way_name') == "磁力":
+                name = i.get('name')
+                size = i.get('size')
+                way_name = i.get('way_name')
+                address = i.get('address')
+                config.logger1.info("iter_tv_link 资源名称:{},文件大小:{},下载类型:{},下载链接:{}".format(name, size, way_name, address))
+                videos_info.append([name, size, way_name, address])
+            elif i.get('way_name') == "电驴":
+                name = i.get('name')
+                size = i.get('size')
+                way_name = i.get('way_name')
+                address = i.get('address')
+                config.logger1.info("iter_tv_link 资源名称:{},文件大小:{},下载类型:{},下载链接:{}".format(name, size, way_name, address))
+                videos_info.append([name, size, way_name, address])
+        return videos_info
+    except Exception as e:
+        config.logger1.exception('iter_tv_link 循环获取下载链接失败，抛出异常:{}'.format(e))
+
+
+def get_movie_link(videoID):
+    """
+    获取下电影下载链接
+    :param videoID:
+    :return:
+    """
+    try:
+        data = search_resource(videoID)
+        if data is None:
+            config.logger1.warning('get_movie_link 资源ID:{}，无下载资源提供'.format(videoID))
+            return None, None, None
+        else:
+            for item in data:
+                fiels = item.get('episodes')[0].get('files').get('MP4')
+                for i in fiels:
+                    if i.get('way_name') == "磁力":
+                        name = i.get('name')
+                        size = i.get('size')
+                        address = i.get('address')
+                        config.logger1.info('get_movie_link 资源ID:{},资源名称:{},文件大小:{},磁力链接:{}'.format(videoID, name, size, address))
+                        return name, size, address
+                    else:
+                        pass
+    except Exception as e:
+        config.logger1.exception('get_movie_link 获取电影下载链接失败，抛出异常:{}'.format(e))
+
+
 if __name__ == '__main__':
-    name = "硅谷"
-    download_poster(name)
+    name = "神盾局"
+    tv_video_id = "30766"
+    mv_video_id = "39202"
+    seasonCount = "1"
+    episodeCount = "3"
+    # get_season_count(tv_video_id)
+    # get_tv_link(tv_video_id, seasonCount, episodeCount)
+    get_episode_count(seasonCount, tv_video_id)
+    # search_resource(tv_video_id)
