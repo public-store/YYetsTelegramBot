@@ -5,5 +5,39 @@
 2. 通过点击返回的内容获取资源下载链接
 
 TO DO：
-
 2. 没事干加一个捐赠接口，需要扶贫
+
+使用方法
+1. 代码克隆
+    ```
+    git clone https://github.com/AlphaBrock/YYetsTelegramBot.git
+    ```
+2. 安装依赖
+    ```
+    pip install -r requirements.txt
+    ```
+3. 修改config.py进行配置，TOKEN 为 Bot 的 API
+    ```
+    TOKEN = 'Your TOKEN'
+    ```
+4. 添加启动服务
+   创建单元文件：vim /lib/systemd/system/yyetsbot.service 自行替换输入如下信息
+   ```
+   [Unit]	
+    Description=A Telegram Bot for querying 2019-nCoV
+    After=network.target network-online.target nss-lookup.target	
+    
+    [Service]	
+    Restart=on-failure	
+    Type=simple	
+    ExecStart=/usr/bin/python3 /root/dxys/src/main.py	
+    
+    [Install]	
+    WantedBy=multi-user.target
+   ```
+   重新载入 daemon、自启、启动
+   ```
+    systemctl daemon-reload
+    systemctl enable dxysbot.service
+    systemctl start dxysbot.service
+    ```
