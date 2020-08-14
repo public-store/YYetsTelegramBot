@@ -162,7 +162,7 @@ def get_tv_link(videoID, seasonCount, episodeCount):
             return None
         else:
             for item in data:
-                if item.get('season') != seasonCount or item.get('season') == "101":
+                if item.get('season') == seasonCount or item.get('season') == "101":
                     episodes = item.get('episodes')
                     for i in episodes:
                         if i.get('episode') == episodeCount:
@@ -170,7 +170,7 @@ def get_tv_link(videoID, seasonCount, episodeCount):
                         else:
                             pass
                 else:
-                    config.logger1.exception('get_tv_link 查无剧集')
+                    config.logger1.error('get_tv_link 查无剧集')
     except Exception as e:
         config.logger1.exception('get_tv_link 获取电视剧下载链接失败，抛出异常:{}'.format(e))
 
@@ -230,11 +230,11 @@ def get_movie_link(videoID):
 
 if __name__ == '__main__':
     name = "神盾局"
-    tv_video_id = "30766"
+    tv_video_id = "37373"
     mv_video_id = "39202"
     seasonCount = "1"
-    episodeCount = "3"
-    # get_season_count(tv_video_id)
-    # get_tv_link(tv_video_id, seasonCount, episodeCount)
-    get_episode_count(seasonCount, tv_video_id)
+    episodeCount = "1"
+    get_season_count(tv_video_id)
+    get_tv_link(tv_video_id, seasonCount, episodeCount)
+    # get_episode_count(seasonCount, tv_video_id)
     # search_resource(tv_video_id)
