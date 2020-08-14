@@ -2,15 +2,12 @@
 # coding:utf-8
 
 import os
-import time
-import requests
-import yyetsBot
 
 import telebot
 from telebot import types
-from telebot import apihelper
 
 import config
+import yyetsBot
 
 TOKEN = os.environ.get('TOKEN') or config.TGBOT_TOKEN
 bot = telebot.TeleBot(TOKEN)
@@ -76,14 +73,19 @@ def send_video_link(call):
     elif len(data) == 3:
         if data[0] == "电影":
             videoID = data[2]
-            name, size, address = yyetsBot.get_movie_link(videoID)
-            if name is None:
+            movie_links = yyetsBot.get_movie_link(videoID)
+            if movie_links is None:
                 bot.send_chat_action(call.message.chat.id, 'typing')
                 bot.send_message(call.message.chat.id, 'Ops，无下载资源提供...')
             else:
-                info = "资源名称: " + name + "\n" + "文件大小: " + size + "\n" + "下载地址: " + address
-                bot.answer_callback_query(call.id, '你要的信息取回来惹')
-                bot.send_message(call.message.chat.id, info)
+                for movie_link in movie_links:
+                    name = movie_link[0]
+                    size = movie_link[1]
+                    way_name = movie_link[2]
+                    address = movie_link[3]
+                    info = "资源名称: " + name + "\n" + "文件大小: " + size + "\n" + "下载类型: " + way_name + "\n" + "下载地址: " + address
+                    bot.answer_callback_query(call.id, '你要的信息取回来惹')
+                    bot.send_message(call.message.chat.id, info)
         elif data[0] == "电视剧":
             videoID = data[2]
             season_count = yyetsBot.get_season_count(videoID)

@@ -166,7 +166,7 @@ def get_tv_link(videoID, seasonCount, episodeCount):
                     episodes = item.get('episodes')
                     for i in episodes:
                         if i.get('episode') == episodeCount:
-                            return iter_tv_link(i.get('files'))
+                            return iter_video_link(i.get('files'))
                         else:
                             pass
                 else:
@@ -175,7 +175,7 @@ def get_tv_link(videoID, seasonCount, episodeCount):
         config.logger1.exception('get_tv_link 获取电视剧下载链接失败，抛出异常:{}'.format(e))
 
 
-def iter_tv_link(files):
+def iter_video_link(files):
     """
     批量获取对应集数电视剧，为了兼容老电视剧，同时也获取了电驴链接
     :param files:
@@ -219,19 +219,11 @@ def get_movie_link(videoID):
         data = search_resource(videoID)
         if data is None:
             config.logger1.warning('get_movie_link 资源ID:{}，无下载资源提供'.format(videoID))
-            return None, None, None
+            return None
         else:
             for item in data:
-                fiels = item.get('episodes')[0].get('files').get('MP4')
-                for i in fiels:
-                    if i.get('way_name') == "磁力":
-                        name = i.get('name')
-                        size = i.get('size')
-                        address = i.get('address')
-                        config.logger1.info('get_movie_link 资源ID:{},资源名称:{},文件大小:{},磁力链接:{}'.format(videoID, name, size, address))
-                        return name, size, address
-                    else:
-                        pass
+                files = item.get('episodes')[0].get('files')
+                return iter_video_link(files)
     except Exception as e:
         config.logger1.exception('get_movie_link 获取电影下载链接失败，抛出异常:{}'.format(e))
 
