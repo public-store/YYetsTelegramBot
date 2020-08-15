@@ -1,4 +1,4 @@
-这是一个人人影视资源搜索机器人，效果自行看演示就好 [戳我](https://cdn.jsdelivr.net/gh/AlphaBrock/md_img/macos/20200815001650.mp4)
+这是一个人人影视资源搜索机器人，效果自行看演示就好 [戳我](https://cdn.jsdelivr.net/gh/AlphaBrock/md_img/macos/20200815222225.mp4)
 
 目前实现的功能:
 > stable分支剔除了当面付功能，需要该功能请使用master分支
