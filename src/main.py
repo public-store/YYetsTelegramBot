@@ -13,6 +13,44 @@ TOKEN = os.environ.get('TOKEN') or config.TGBOT_TOKEN
 bot = telebot.TeleBot(TOKEN)
 
 
+def is_number(str):
+    try:
+        float(str)
+        return True
+    except ValueError:
+        pass
+
+    try:
+        import unicodedata
+        unicodedata.numeric(str)
+        return True
+    except (ValueError, TypeError):
+        pass
+
+    return False
+
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.send_chat_action(message.chat.id, 'typing')
+    bot.send_message(message.chat.id, '欢迎使用，发送想要的剧集标题，我会帮你搜索。'
+                                      '建议使用<a href="http://www.zmz2019.com/">人人影视</a>标准译名',
+                     parse_mode='html')
+
+
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    bot.send_chat_action(message.chat.id, 'typing')
+    bot.send_message(message.chat.id, '''不会使用？可以查看为你们录制的视频 <a href='https://cdn.jsdelivr.net/gh/AlphaBrock/md_img/macos/20200815001650.mp4'>戳我</a>''',
+                     parse_mode='html')
+
+
+@bot.message_handler(commands=['donate'])
+def send_help(message):
+    bot.send_chat_action(message.chat.id, 'typing')
+    bot.send_message(message.chat.id, '''最近有点穷，捐赠点？''')
+
+
 @bot.message_handler(func=lambda m: True)
 def talk_with_user(message):
     """
@@ -22,22 +60,25 @@ def talk_with_user(message):
     """
     config.logger1.info("talk_with_user 获取到用户:{}，输入数据:{}".format(message.chat.id, message.text))
 
-    img_data = yyetsBot.download_poster(message.text)
-    if img_data is None:
-        bot.send_chat_action(message.chat.id, 'typing')
-        bot.send_message(message.chat.id, 'Ops，你查询的资源不存在，换个名称试试？')
+    if "donate" in message.text:
+        pass
     else:
-        bot.send_chat_action(message.chat.id, 'typing')
-        bot.send_message(message.chat.id, "你想看哪个呢？请点击选择")
-        for i in img_data:
-            id = i[0]
-            channel_cn = i[1]
-            cnname = i[2]
-            img = i[3]
+        img_data = yyetsBot.download_poster(message.text)
+        if img_data is None:
             bot.send_chat_action(message.chat.id, 'typing')
-            markup = types.InlineKeyboardMarkup()
-            markup.add(types.InlineKeyboardButton("{}:{}".format(channel_cn, cnname), callback_data="{}:{}:{}".format(channel_cn, cnname, id)))
-            bot.send_photo(message.chat.id, img, reply_markup=markup)
+            bot.send_message(message.chat.id, 'Ops，你查询的资源不存在，换个名称试试？')
+        else:
+            bot.send_chat_action(message.chat.id, 'typing')
+            bot.send_message(message.chat.id, "你想看哪个呢？请点击选择")
+            for i in img_data:
+                id = i[0]
+                channel_cn = i[1]
+                cnname = i[2]
+                img = i[3]
+                bot.send_chat_action(message.chat.id, 'typing')
+                markup = types.InlineKeyboardMarkup()
+                markup.add(types.InlineKeyboardButton("{}:{}".format(channel_cn, cnname), callback_data="{}:{}:{}".format(channel_cn, cnname, id)))
+                bot.send_photo(message.chat.id, img, reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: call.data != 'fix')
@@ -49,7 +90,7 @@ def send_video_link(call):
         videoID = data[0]
         season = data[1]
         episodeCount = yyetsBot.get_episode_count(season, videoID)
-        if episodeCount is None:
+        if is_number(episodeCount) is False:
             bot.send_message(call.message.chat.id, 'Ops，无下载资源提供...')
         else:
             btn_list = []

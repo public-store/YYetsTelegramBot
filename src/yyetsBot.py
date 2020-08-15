@@ -115,7 +115,6 @@ def get_season_count(videoID):
             season_count = 1
         else:
             season_count = check
-
         config.logger1.info("get_season_count 资源ID:{},季数:{}".format(videoID, season_count))
         return season_count
     except Exception as e:
@@ -142,7 +141,7 @@ def get_episode_count(seasonCount, videoID):
                         'get_episode_count 视频ID:{}，季数:{}，集数:{}'.format(videoID, seasonCount, episodeCount))
                     return episodeCount
                 else:
-                    return None
+                    pass
     except Exception as e:
         config.logger1.exception('get_episode_count 获取集数失败，抛出异常:{}'.format(e))
 
@@ -230,11 +229,11 @@ def get_movie_link(videoID):
 
 if __name__ == '__main__':
     name = "神盾局"
-    tv_video_id = "37373"
+    tv_video_id = "30675"
     mv_video_id = "39202"
     seasonCount = "1"
-    episodeCount = "1"
-    get_season_count(tv_video_id)
-    get_tv_link(tv_video_id, seasonCount, episodeCount)
-    # get_episode_count(seasonCount, tv_video_id)
+    episodeCount = "8"
+    # get_season_count(tv_video_id)
+    # get_tv_link(tv_video_id, seasonCount, episodeCount)
+    get_episode_count(seasonCount, tv_video_id)
     # search_resource(tv_video_id)
