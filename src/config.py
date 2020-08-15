@@ -37,16 +37,3 @@ sh = logging.StreamHandler()  # 往屏幕上输出
 sh.setFormatter(fmt)  # 设置屏幕上显示的格式
 logger1 = logging.Logger(name='alert', level=logging.DEBUG)
 logger1.addHandler(sh)
-
-# 支付宝配置信息
-# appid
-appid="xxxxxxxxxxxxxxxx"
-
-# 订单超时时间
-PAY_TIMEOUT = '20m'
-
-# 应用私钥
-app_private_key_string = "-----BEGIN RSA PRIVATE KEY-----\n填写自己生成的应用密钥\n-----END RSA PRIVATE KEY-----"
-
-# 支付宝公钥，验证支付宝回传消息使用，不是你自己的公钥,
-alipay_public_key_string = "-----BEGIN PUBLIC KEY-----\n填写支付宝公钥\n-----END PUBLIC KEY-----"
