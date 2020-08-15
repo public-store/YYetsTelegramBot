@@ -24,7 +24,7 @@ TO DO：
    创建单元文件：vim /lib/systemd/system/yyetsbot.service 自行替换输入如下信息
    ```
    [Unit]	
-    Description=A Telegram Bot for querying 2019-nCoV
+    Description=A Telegram Bot for querying YYets
     After=network.target network-online.target nss-lookup.target	
     
     [Service]	

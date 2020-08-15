@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from pprint import pprint
+
 import requests
 import config
 import random
@@ -165,7 +167,7 @@ def get_tv_link(videoID, seasonCount, episodeCount):
                     episodes = item.get('episodes')
                     for i in episodes:
                         if i.get('episode') == episodeCount:
-                            return iter_video_link(i.get('files'))
+                            return iter_video_link('tv', i.get('files'))
                         else:
                             pass
                 else:
@@ -174,36 +176,71 @@ def get_tv_link(videoID, seasonCount, episodeCount):
         config.logger1.exception('get_tv_link 获取电视剧下载链接失败，抛出异常:{}'.format(e))
 
 
-def iter_video_link(files):
+def iter_video_link(files_type, files):
     """
     批量获取对应集数电视剧，为了兼容老电视剧，同时也获取了电驴链接
+    暂时没想到什么好方式兼容获取电影下载链接的方式，先用这个粗糙的方式获取吧
     :param files:
     :return:
     """
     try:
-        videos = ''
-        if "MP4" in files:
-            videos = files.get('MP4')
-        elif "HR-HDTV" in files:
-            videos = files.get('HR-HDTV')
+        if files_type == "tv":
+            if "MP4" in files or "HR-HDTV" in files:
+                videos = ''
+                if "MP4" in files:
+                    videos = files.get('MP4')
+                elif "HR-HDTV" in files:
+                    videos = files.get('HR-HDTV')
 
-        videos_info = []
-        for i in videos:
-            if i.get('way_name') == "磁力":
-                name = i.get('name')
-                size = i.get('size')
-                way_name = i.get('way_name')
-                address = i.get('address')
-                config.logger1.info("iter_tv_link 资源名称:{},文件大小:{},下载类型:{},下载链接:{}".format(name, size, way_name, address))
-                videos_info.append([name, size, way_name, address])
-            elif i.get('way_name') == "电驴":
-                name = i.get('name')
-                size = i.get('size')
-                way_name = i.get('way_name')
-                address = i.get('address')
-                config.logger1.info("iter_tv_link 资源名称:{},文件大小:{},下载类型:{},下载链接:{}".format(name, size, way_name, address))
-                videos_info.append([name, size, way_name, address])
-        return videos_info
+                videos_info = []
+                for i in videos:
+                    if i.get('way_name') == "磁力":
+                        name = i.get('name')
+                        size = i.get('size')
+                        way_name = i.get('way_name')
+                        address = i.get('address')
+                        config.logger1.info(
+                            "iter_tv_link 资源名称:{},文件大小:{},下载类型:{},下载链接:{}".format(name, size, way_name, address))
+                        videos_info.append([name, size, way_name, address])
+                    elif i.get('way_name') == "电驴":
+                        name = i.get('name')
+                        size = i.get('size')
+                        way_name = i.get('way_name')
+                        address = i.get('address')
+                        config.logger1.info(
+                            "iter_tv_link 资源名称:{},文件大小:{},下载类型:{},下载链接:{}".format(name, size, way_name, address))
+                        videos_info.append([name, size, way_name, address])
+                return videos_info
+        elif files_type == "movie":
+            for item in files:
+                item_file = item.get('files')
+                if "MP4" in item_file or "HR-HDTV" in item_file:
+                    videos = ''
+                    if "MP4" in item_file:
+                        videos = item_file.get('MP4')
+                    elif "HR-HDTV" in item_file:
+                        videos = item_file.get('HR-HDTV')
+                    videos_info = []
+                    for i in videos:
+                        if i.get('way_name') == "磁力":
+                            name = i.get('name')
+                            size = i.get('size')
+                            way_name = i.get('way_name')
+                            address = i.get('address')
+                            config.logger1.info(
+                                "iter_tv_link 资源名称:{},文件大小:{},下载类型:{},下载链接:{}".format(name, size, way_name, address))
+                            videos_info.append([name, size, way_name, address])
+                        elif i.get('way_name') == "电驴":
+                            name = i.get('name')
+                            size = i.get('size')
+                            way_name = i.get('way_name')
+                            address = i.get('address')
+                            config.logger1.info(
+                                "iter_tv_link 资源名称:{},文件大小:{},下载类型:{},下载链接:{}".format(name, size, way_name, address))
+                            videos_info.append([name, size, way_name, address])
+                    return videos_info
+        else:
+            return None
     except Exception as e:
         config.logger1.exception('iter_tv_link 循环获取下载链接失败，抛出异常:{}'.format(e))
 
@@ -221,8 +258,7 @@ def get_movie_link(videoID):
             return None
         else:
             for item in data:
-                files = item.get('episodes')[0].get('files')
-                return iter_video_link(files)
+                return iter_video_link('movie', item.get('episodes'))
     except Exception as e:
         config.logger1.exception('get_movie_link 获取电影下载链接失败，抛出异常:{}'.format(e))
 
@@ -230,10 +266,11 @@ def get_movie_link(videoID):
 if __name__ == '__main__':
     name = "神盾局"
     tv_video_id = "30675"
-    mv_video_id = "39202"
+    mv_video_id = "38178"
     seasonCount = "1"
     episodeCount = "8"
     # get_season_count(tv_video_id)
     # get_tv_link(tv_video_id, seasonCount, episodeCount)
-    get_episode_count(seasonCount, tv_video_id)
+    # get_episode_count(seasonCount, tv_video_id)
     # search_resource(tv_video_id)
+    get_movie_link(mv_video_id)
