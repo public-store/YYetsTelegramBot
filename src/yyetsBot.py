@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from pprint import pprint
-
 import requests
 import config
 import random

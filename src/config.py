@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
-import os
 
 TGBOT_TOKEN = "1311855454:AAF2ehpHguJ3CSlvyWbm-M_RGvb4g9z4DMo"
-#
-# # 存放数据的地方
-# DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'netEaseMusic.db')
 
 UserAgent = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36',
@@ -44,7 +40,10 @@ logger1.addHandler(sh)
 
 # 支付宝配置信息
 # appid
-appid="xxxxxxxx"
+appid="xxxxxxxxxxxxxxxx"
+
+# 订单超时时间
+PAY_TIMEOUT = '20m'
 
 # 应用私钥
 app_private_key_string = "-----BEGIN RSA PRIVATE KEY-----\n填写自己生成的应用密钥\n-----END RSA PRIVATE KEY-----"
