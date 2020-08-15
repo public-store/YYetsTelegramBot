@@ -1,4 +1,4 @@
-这是一个人人影视资源搜索机器人，效果自行看演示就好 [戳我](https://cdn.jsdelivr.net/gh/AlphaBrock/md_img/macos/20200815001650.mp4)
+这是一个人人影视资源搜索机器人，效果自行看演示就好 [戳我](https://cdn.jsdelivr.net/gh/AlphaBrock/md_img/macos/20200815222225.mp4)
 
 目前实现的功能:
 1. 输入任意内容可自行去人人影视查询，并返回资源海报
